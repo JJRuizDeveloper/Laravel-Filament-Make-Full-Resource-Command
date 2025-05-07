@@ -33,21 +33,43 @@ class MakeFullResource extends Command
             $fields = [];
             while ($this->confirm($useEnglish ? 'Add a field?' : '¿Deseas agregar un campo?')) {
                 $type = $this->choice($useEnglish ? 'Field type' : 'Tipo de campo', [
-                    'string', 'text', 'integer', 'bigInteger', 'unsignedBigInteger', 'boolean',
-                    'date', 'dateTime', 'decimal', 'float', 'foreignId', 'timestamps', 'time',
-                    'json', 'jsonb', 'enum', 'unsignedInteger', 'unsignedTinyInteger',
-                    'unsignedSmallInteger', 'unsignedMediumInteger'
-                ], 0);
-                $name = $this->ask('Field name');
+                    'string' => $useEnglish ? 'string' : 'cadena',
+                    'text' => $useEnglish ? 'text' : 'texto',
+                    'integer' => $useEnglish ? 'integer' : 'entero',
+                    'bigInteger' => $useEnglish ? 'bigInteger' : 'gran entero',
+                    'unsignedBigInteger' => $useEnglish ? 'unsignedBigInteger' : 'entero grande sin signo',
+                    'boolean' => $useEnglish ? 'boolean' : 'booleano',
+                    'date' => $useEnglish ? 'date' : 'fecha',
+                    'dateTime' => $useEnglish ? 'dateTime' : 'fecha y hora',
+                    'decimal' => $useEnglish ? 'decimal' : 'decimal',
+                    'float' => $useEnglish ? 'float' : 'flotante',
+                    'foreignId' => $useEnglish ? 'foreignId' : 'ID externo',
+                    'timestamps' => $useEnglish ? 'timestamps' : 'marca de tiempo',
+                    'time' => $useEnglish ? 'time' : 'hora',
+                    'json' => $useEnglish ? 'json' : 'json',
+                    'jsonb' => $useEnglish ? 'jsonb' : 'json binario',
+                    'enum' => $useEnglish ? 'enum' : 'enum',
+                    'unsignedInteger' => $useEnglish ? 'unsignedInteger' : 'entero sin signo',
+                    'unsignedTinyInteger' => $useEnglish ? 'unsignedTinyInteger' : 'entero pequeño sin signo',
+                    'unsignedSmallInteger' => $useEnglish ? 'unsignedSmallInteger' : 'entero pequeño sin signo',
+                    'unsignedMediumInteger' => $useEnglish ? 'unsignedMediumInteger' : 'entero mediano sin signo'
+                ], 'string');
+                $name = $this->ask($useEnglish ? 'Field name' : 'Nombre del campo');
                 $fields[] = "$type:$name";
             }
             $relations = [];
             while ($this->confirm($useEnglish ? 'Add a relationship?' : '¿Deseas agregar una relación?')) {
                 $type = $this->choice($useEnglish ? 'Relation type' : 'Tipo de relación', [
-                    'belongsTo', 'hasOne', 'hasMany', 'belongsToMany', 'morphTo',
-                    'morphMany', 'morphOne', 'morphedByMany'
-                ], 0);
-                $related = $this->ask('Related model');
+                    'belongsTo' => $useEnglish ? 'belongsTo' : 'pertenece a',
+                    'hasOne' => $useEnglish ? 'hasOne' : 'tiene uno',
+                    'hasMany' => $useEnglish ? 'hasMany' : 'tiene muchos',
+                    'belongsToMany' => $useEnglish ? 'belongsToMany' : 'pertenece a muchos',
+                    'morphTo' => $useEnglish ? 'morphTo' : 'morphTo',
+                    'morphMany' => $useEnglish ? 'morphMany' : 'morphMany',
+                    'morphOne' => $useEnglish ? 'morphOne' : 'morphOne',
+                    'morphedByMany' => $useEnglish ? 'morphedByMany' : 'morphedByMany'
+                ], 'belongsTo');
+                $related = $this->ask($useEnglish ? 'Related model' : 'Modelo relacionado');
                 $relations[] = "$type:$related";
             }
         }
@@ -145,11 +167,8 @@ class MakeFullResource extends Command
                 $formFields   .= "Select::make('$name')->relationship('" . Str::camel($rel) . "','id')->required(),\n                ";
                 $tableColumns .= "TextColumn::make('$name'),\n                ";
                 $filters      .= "SelectFilter::make('$name')->relationship('" . Str::camel($rel) . "','id'),\n                ";
-            } elseif (in_array($type, ['string', 'text', 'decimal', 'float'])) {
+            } elseif (in_array($type, ['string', 'text'])) {
                 $formFields   .= "TextInput::make('$name')->required(),\n                ";
-                $tableColumns .= "TextColumn::make('$name'),\n                ";
-            } elseif ($type === 'boolean') {
-                $formFields   .= "Toggle::make('$name'),\n                ";
                 $tableColumns .= "TextColumn::make('$name'),\n                ";
             } else {
                 $formFields   .= "TextInput::make('$name'),\n                ";
