@@ -5,6 +5,7 @@
 
 ## Version
 v.1.0.2
+
 ## Requirements
 - PHP 8+
 - Laravel 8+
