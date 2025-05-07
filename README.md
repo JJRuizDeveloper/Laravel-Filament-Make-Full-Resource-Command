@@ -7,7 +7,7 @@ Filament 3+
 ## How to import:
 copy the MakeFullResource.php file inside App\Console\Commands folder of your laravel project.
 
-## Comand:
+## Command:
 php artisan make:full-resource-64
 
 ## Description:
