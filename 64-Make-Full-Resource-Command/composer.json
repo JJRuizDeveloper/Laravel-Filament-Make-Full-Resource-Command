@@ -1,0 +1,25 @@
+{
+    "name": "sixtyfour-software/make-full-resource",
+    "description": "A Laravel package to generate full resources with migrations, models, and Filament resources.",
+    "type": "library",
+    "require": {
+        "php": "^7.4|^8.0",
+        "illuminate/support": "^8.0|^9.0|^10.0",
+        "filament/filament": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SixtyFourSoftware\\MakeFullResource\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SixtyFourSoftware\\MakeFullResource\\MakeFullResourceServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

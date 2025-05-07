@@ -6,7 +6,7 @@
  * Youtube: @Gogodev
  */
 
-namespace App\Console\Commands;
+namespace SixtyFourSoftware\MakeFullResource\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
@@ -16,7 +16,7 @@ use Illuminate\Filesystem\Filesystem;
 class MakeFullResource extends Command
 {
     protected $signature = 'make:full-resource-64 {--log} {--json=}';
-    protected $description = 'Crea modelo, migración, relaciones y recurso Filament completo';
+    protected $description = 'A Laravel package to generate full resources with migrations, models, and Filament resources. | Crea modelo, migración, relaciones y recurso Filament completo';
 
     public function handle()
     {
