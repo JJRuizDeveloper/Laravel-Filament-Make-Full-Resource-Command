@@ -75,7 +75,17 @@ class MakeFullResource extends Command
                     'morphOne' => $useEnglish ? 'morphOne' : 'morphOne',
                     'morphedByMany' => $useEnglish ? 'morphedByMany' : 'morphedByMany'
                 ], 'belongsTo');
-                $related = $this->ask($useEnglish ? 'Related model' : 'Modelo relacionado');
+                $modelPath = app_path('Models');
+                $availableModels = collect((new Filesystem)->files($modelPath))
+                    ->filter(fn($file) => $file->getExtension() === 'php')
+                    ->map(fn($file) => $file->getFilenameWithoutExtension())
+                    ->values()
+                    ->all();
+
+                $related = $this->choice(
+                    $useEnglish ? 'Select related model' : 'Seleccione el modelo relacionado',
+                    $availableModels
+                );
                 $relations[] = "$type:$related";
             }
         }
@@ -196,4 +206,5 @@ class MakeFullResource extends Command
             $this->info(($useEnglish ? '📄 Log saved to: ' : '📄 Log guardado en: ') . $logPath);
         }
     }
+  
 }
