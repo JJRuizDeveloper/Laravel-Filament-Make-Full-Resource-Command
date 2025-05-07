@@ -4,7 +4,7 @@
 ### https://youtube.com/@gogodev
 
 ## Version
-v.1.0.2
+v.1.0.3
 
 ## Requirements
 - PHP 8+
