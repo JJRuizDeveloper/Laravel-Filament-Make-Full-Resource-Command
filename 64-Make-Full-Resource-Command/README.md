@@ -1,8 +1,12 @@
 # Laravel-Filament-Make-Full-Resource-Command
+### @JJRuizDeveloper
+### https://64software.com
+### https://youtube.com/@gogodev
 
 ## Requirements
-Laravel 10+
-Filament 3+
+PHP 8+
+Laravel 8+
+Filament 2+
 
 ## How to import:
 copy the MakeFullResource.php file inside App\Console\Commands folder of your laravel project.
@@ -11,4 +15,7 @@ copy the MakeFullResource.php file inside App\Console\Commands folder of your la
 php artisan make:full-resource-64
 
 ## Description:
-Creates migration, model, and filament resource with form and tables, all in one command :)
+Creates migration, model, and filament resource with form and tables, all in one command :D
+
+## License:
+This package is licensed under the MIT License.
