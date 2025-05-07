@@ -9,7 +9,7 @@ use Illuminate\Filesystem\Filesystem;
 
 class MakeFullResource extends Command
 {
-    protected $signature = 'make:full-resource-64';
+    protected $signature = 'make:full-resource-64 {--log} {--json=}';
     protected $description = 'Crea modelo, migración, relaciones y recurso Filament completo';
 
     public function handle()
@@ -17,79 +17,94 @@ class MakeFullResource extends Command
         $language = $this->choice('Select language / Seleccione idioma', ['English', 'Español'], 0);
         $useEnglish = $language === 'English';
 
-        $modelName = $this->ask(
-            $useEnglish ? 'Model name (e.g., Product)' : 'Nombre del modelo (ej. Producto)'
-        );
+        // Entradas interactivas o vía JSON
+        if ($jsonInput = $this->option('json')) {
+            $data = json_decode($jsonInput, true);
+            if (!is_array($data)) {
+                $this->error('Invalid JSON input');
+                return;
+            }
+            $modelName = $data['model'] ?? null;
+            $fields = $data['fields'] ?? [];
+            $relations = $data['relations'] ?? [];
+        } else {
+            $modelName = $this->ask($useEnglish ? 'Model name (e.g., Product)' : 'Nombre del modelo (ej. Producto)');
+            $fields = [];
+            while ($this->confirm($useEnglish ? 'Add a field?' : '¿Deseas agregar un campo?')) {
+                $type = $this->choice('Field type', ['string', 'integer', 'text', 'foreignId'], 0);
+                $name = $this->ask('Field name');
+                $fields[] = "$type:$name";
+            }
+            $relations = [];
+            while ($this->confirm($useEnglish ? 'Add a relationship?' : '¿Deseas agregar una relación?')) {
+                $type = $this->choice('Relation type', ['belongsTo', 'hasMany'], 0);
+                $related = $this->ask('Related model');
+                $relations[] = "$type:$related";
+            }
+        }
 
+        // Previsualización
         $tableName = Str::snake(Str::pluralStudly($modelName));
-
-        $fieldsInput = $this->ask(
-            $useEnglish
-                ? 'Fields (format: type:name, e.g., string:name, integer:stock, foreignId:category_id)'
-                : 'Campos (formato: tipo:nombre, ej. string:nombre, integer:stock, foreignId:categoria_id)'
-        );
-
-        $relationsInput = $this->ask(
-            $useEnglish
-                ? 'Relationships (format: type:model, e.g., belongsTo:Category, hasMany:Comment)'
-                : 'Relaciones (formato: tipo:modelo, ej. belongsTo:Categoria, hasMany:Comentario)',
-            ''
-        );
-
-        $fields = array_map('trim', explode(',', $fieldsInput));
-        $relations = $relationsInput ? array_map('trim', explode(',', $relationsInput)) : [];
-
-        Artisan::call('make:model', ['name' => $modelName, '--migration' => true]);
-        $this->info(Artisan::output());
+        $this->info("\n📄 " . ($useEnglish ? 'Summary:' : 'Resumen:'));
+        $this->line("Model: $modelName");
+        $this->line("Table: $tableName");
+        $this->line(($useEnglish ? 'Fields:' : 'Campos:'));
+        foreach ($fields as $field) $this->line("  - $field");
+        if (count($relations)) {
+            $this->line(($useEnglish ? 'Relations:' : 'Relaciones:'));
+            foreach ($relations as $r) $this->line("  - $r");
+        }
+        if (!$this->confirm($useEnglish ? 'Continue?' : '¿Continuar?')) return;
 
         $fs = new Filesystem();
 
+        // Crear modelo
+        Artisan::call('make:model', ['name' => $modelName, '--migration' => true]);
+        $this->info(Artisan::output());
+
+        // Editar migración
         $migrationFile = collect($fs->files(database_path('migrations')))
             ->last(fn($file) => str_contains($file->getFilename(), "create_{$tableName}_table"));
 
         $migrationContent = $fs->get($migrationFile->getPathname());
         $schema = '';
         foreach ($fields as $field) {
+            if (!str_contains($field, ':')) continue;
             [$type, $name] = explode(':', $field);
-            $schema .= "\$table->$type('$name');\n            ";
+           $schema .= "\$table->$type('$name');\n            ";
         }
-
         $migrationContent = preg_replace(
             '/Schema::create\(.*function \(Blueprint \$table\) \{(.*?)\$table->timestamps\(\);/s',
             "Schema::create('$tableName', function (Blueprint \$table) {\n            \$table->id();\n            $schema\$table->timestamps();",
             $migrationContent
         );
-
         $fs->put($migrationFile->getPathname(), $migrationContent);
 
+        // Modelo: guarded + relaciones
         $modelPath = app_path("Models/{$modelName}.php");
         $modelContent = $fs->get($modelPath);
         $modelContent = preg_replace('/\{/', "{\n    protected \$guarded = ['id'];\n", $modelContent, 1);
-
         $methods = '';
         foreach ($relations as $relation) {
+            if (!str_contains($relation, ':')) continue;
             [$type, $related] = explode(':', $relation);
             $methodName = Str::camel($type === 'hasMany' ? Str::plural($related) : $related);
             $methods .= "\n    public function $methodName()\n    {\n        return \$this->$type($related::class);\n    }\n";
         }
-
         $modelContent = preg_replace('/\}\s*$/', $methods . "\n}", $modelContent);
         $fs->put($modelPath, $modelContent);
 
+        // Filament resource
         Artisan::call('make:filament-resource', ['name' => $modelName]);
         $this->info(Artisan::output());
 
         $resourcePath = base_path("app/Filament/Resources/{$modelName}Resource.php");
-
-        if (! $fs->exists($resourcePath)) {
-            $this->error($useEnglish
-                ? "Resource file not found at: $resourcePath"
-                : "No se encontró el archivo de recurso en: $resourcePath");
+        if (!$fs->exists($resourcePath)) {
+            $this->error(($useEnglish ? 'Resource not found:' : 'No se encontró el recurso:') . " $resourcePath");
             return;
         }
 
         $resourceContent = $fs->get($resourcePath);
-
         $resourceContent = preg_replace('/^[\s\S]*?(<\?php)/', '$1', $resourceContent);
 
         if (preg_match('/(<\?php\s*\nnamespace [^;]+;\R)/', $resourceContent, $m)) {
@@ -101,13 +116,11 @@ class MakeFullResource extends Command
                 'Filament\Tables\Columns\TextColumn',
                 'Filament\Tables\Filters\SelectFilter',
             ];
-
             foreach ($imports as $i) {
-                if (! str_contains($resourceContent, "use $i;")) {
+                if (!str_contains($resourceContent, "use $i;")) {
                     $uses[] = "use $i;";
                 }
             }
-
             $resourceContent = str_replace($block, $block . implode("\n", $uses) . "\n\n", $resourceContent);
         }
 
@@ -115,6 +128,7 @@ class MakeFullResource extends Command
         $tableColumns = '';
         $filters = '';
         foreach ($fields as $field) {
+            if (!str_contains($field, ':')) continue;
             [$type, $name] = explode(':', $field);
             if (str_starts_with($type, 'foreignId')) {
                 $rel = Str::studly(str_replace('_id', '', $name));
@@ -135,9 +149,13 @@ class MakeFullResource extends Command
         $resourceContent = preg_replace('/->filters\(\[.*?\]\)/s', "->filters([\n                $filters\n            ])", $resourceContent);
 
         $fs->put($resourcePath, $resourceContent);
+        $this->info(($useEnglish ? '✅ Full resource created for ' : '✅ Recurso completo creado para ') . $modelName);
 
-        $this->info($useEnglish
-            ? "✅ Full resource for {$modelName} created."
-            : "✅ Recurso completo para {$modelName} creado.");
+        // Log opcional
+        if ($this->option('log')) {
+            $logPath = storage_path("logs/{$modelName}_resource_log.txt");
+            file_put_contents($logPath, "Model: $modelName\nFields: " . implode(',', $fields) . "\nRelations: " . implode(',', $relations));
+            $this->info(($useEnglish ? '📄 Log saved to: ' : '📄 Log guardado en: ') . $logPath);
+        }
     }
 }
