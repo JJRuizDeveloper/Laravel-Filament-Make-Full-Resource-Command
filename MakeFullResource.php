@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Author: @JJRuizDeveloper
+ * Web: https://64software.com
+ * Youtube: @Gogodev
+ */
+
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
