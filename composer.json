@@ -2,6 +2,7 @@
     "name": "sixtyfour-software/make-full-resource",
     "description": "A Laravel package to generate full resources with migrations, models, and Filament resources.",
     "type": "library",
+    "license": "MIT",
     "require": {
         "php": "^7.4|^8.0",
         "illuminate/support": "^8.0|^9.0|^10.0",
