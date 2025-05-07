@@ -32,13 +32,21 @@ class MakeFullResource extends Command
             $modelName = $this->ask($useEnglish ? 'Model name (e.g., Product)' : 'Nombre del modelo (ej. Producto)');
             $fields = [];
             while ($this->confirm($useEnglish ? 'Add a field?' : '¿Deseas agregar un campo?')) {
-                $type = $this->choice($useEnglish ? 'Field type' : 'Tipo de campo', ['string', 'integer', 'text', 'foreignId'], 0);
+                $type = $this->choice($useEnglish ? 'Field type' : 'Tipo de campo', [
+                    'string', 'text', 'integer', 'bigInteger', 'unsignedBigInteger', 'boolean',
+                    'date', 'dateTime', 'decimal', 'float', 'foreignId', 'timestamps', 'time',
+                    'json', 'jsonb', 'enum', 'unsignedInteger', 'unsignedTinyInteger',
+                    'unsignedSmallInteger', 'unsignedMediumInteger'
+                ], 0);
                 $name = $this->ask('Field name');
                 $fields[] = "$type:$name";
             }
             $relations = [];
             while ($this->confirm($useEnglish ? 'Add a relationship?' : '¿Deseas agregar una relación?')) {
-                $type = $this->choice($useEnglish ? 'Relation type' : 'Tipo de relación', ['belongsTo', 'hasMany'], 0);
+                $type = $this->choice($useEnglish ? 'Relation type' : 'Tipo de relación', [
+                    'belongsTo', 'hasOne', 'hasMany', 'belongsToMany', 'morphTo',
+                    'morphMany', 'morphOne', 'morphedByMany'
+                ], 0);
                 $related = $this->ask('Related model');
                 $relations[] = "$type:$related";
             }
@@ -137,8 +145,11 @@ class MakeFullResource extends Command
                 $formFields   .= "Select::make('$name')->relationship('" . Str::camel($rel) . "','id')->required(),\n                ";
                 $tableColumns .= "TextColumn::make('$name'),\n                ";
                 $filters      .= "SelectFilter::make('$name')->relationship('" . Str::camel($rel) . "','id'),\n                ";
-            } elseif (in_array($type, ['string', 'text'])) {
+            } elseif (in_array($type, ['string', 'text', 'decimal', 'float'])) {
                 $formFields   .= "TextInput::make('$name')->required(),\n                ";
+                $tableColumns .= "TextColumn::make('$name'),\n                ";
+            } elseif ($type === 'boolean') {
+                $formFields   .= "Toggle::make('$name'),\n                ";
                 $tableColumns .= "TextColumn::make('$name'),\n                ";
             } else {
                 $formFields   .= "TextInput::make('$name'),\n                ";
