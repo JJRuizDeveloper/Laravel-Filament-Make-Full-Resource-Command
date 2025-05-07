@@ -82,10 +82,20 @@ class MakeFullResource extends Command
                     ->values()
                     ->all();
 
-                $related = $this->choice(
+                $otherOption = $useEnglish ? 'Other (write manually)' : 'Otro (escribir manualmente)';
+                $availableModels[] = $otherOption;
+
+                $selected = $this->choice(
                     $useEnglish ? 'Select related model' : 'Seleccione el modelo relacionado',
                     $availableModels
                 );
+
+                if ($selected === $otherOption) {
+                    $related = $this->ask($useEnglish ? 'Enter related model name manually' : 'Ingrese el nombre del modelo relacionado manualmente');
+                } else {
+                    $related = $selected;
+                }
+
                 $relations[] = "$type:$related";
             }
         }
