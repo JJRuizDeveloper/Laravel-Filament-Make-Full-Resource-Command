@@ -14,6 +14,7 @@ class MakeFullResource extends Command
 
     public function handle()
     {
+        // Selección de idioma
         $language = $this->choice('Select language / Seleccione idioma', ['English', 'Español'], 0);
         $useEnglish = $language === 'English';
 
@@ -21,7 +22,7 @@ class MakeFullResource extends Command
         if ($jsonInput = $this->option('json')) {
             $data = json_decode($jsonInput, true);
             if (!is_array($data)) {
-                $this->error('Invalid JSON input');
+                $this->error($useEnglish ? 'Invalid JSON input' : 'Entrada JSON inválida');
                 return;
             }
             $modelName = $data['model'] ?? null;
@@ -31,13 +32,13 @@ class MakeFullResource extends Command
             $modelName = $this->ask($useEnglish ? 'Model name (e.g., Product)' : 'Nombre del modelo (ej. Producto)');
             $fields = [];
             while ($this->confirm($useEnglish ? 'Add a field?' : '¿Deseas agregar un campo?')) {
-                $type = $this->choice('Field type', ['string', 'integer', 'text', 'foreignId'], 0);
+                $type = $this->choice($useEnglish ? 'Field type' : 'Tipo de campo', ['string', 'integer', 'text', 'foreignId'], 0);
                 $name = $this->ask('Field name');
                 $fields[] = "$type:$name";
             }
             $relations = [];
             while ($this->confirm($useEnglish ? 'Add a relationship?' : '¿Deseas agregar una relación?')) {
-                $type = $this->choice('Relation type', ['belongsTo', 'hasMany'], 0);
+                $type = $this->choice($useEnglish ? 'Relation type' : 'Tipo de relación', ['belongsTo', 'hasMany'], 0);
                 $related = $this->ask('Related model');
                 $relations[] = "$type:$related";
             }
@@ -71,7 +72,7 @@ class MakeFullResource extends Command
         foreach ($fields as $field) {
             if (!str_contains($field, ':')) continue;
             [$type, $name] = explode(':', $field);
-           $schema .= "\$table->$type('$name');\n            ";
+            $schema .= "\$table->$type('$name');\n            ";
         }
         $migrationContent = preg_replace(
             '/Schema::create\(.*function \(Blueprint \$table\) \{(.*?)\$table->timestamps\(\);/s',
@@ -124,6 +125,7 @@ class MakeFullResource extends Command
             $resourceContent = str_replace($block, $block . implode("\n", $uses) . "\n\n", $resourceContent);
         }
 
+        // Crear form(), table() y filters()
         $formFields = '';
         $tableColumns = '';
         $filters = '';
